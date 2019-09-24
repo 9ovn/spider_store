@@ -160,5 +160,5 @@ def main():
 
 if __name__ == '__main__':
     url = "http://www.ting56.com/byy/aibaoliang.html"
-    # main()
-    print(sys.getsizeof(main()))
+    main()
+
