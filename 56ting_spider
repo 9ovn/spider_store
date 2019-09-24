@@ -1,0 +1,164 @@
+import requests
+import threading
+import multiprocessing
+from lxml import etree
+import time
+import json
+import re
+import random
+import sys
+
+def get_ua():
+	user_agents = [
+		'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36 OPR/26.0.1656.60',
+		'Opera/8.0 (Windows NT 5.1; U; en)',
+		'Mozilla/5.0 (Windows NT 5.1; U; en; rv:1.8.1) Gecko/20061208 Firefox/2.0.0 Opera 9.50',
+		'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; en) Opera 9.50',
+		'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0',
+		'Mozilla/5.0 (X11; U; Linux x86_64; zh-CN; rv:1.9.2.10) Gecko/20100922 Ubuntu/10.10 (maverick) Firefox/3.6.10',
+		'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.57.2 (KHTML, like Gecko) Version/5.1.7 Safari/534.57.2 ',
+		'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.71 Safari/537.36',
+		'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+		'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.16 (KHTML, like Gecko) Chrome/10.0.648.133 Safari/534.16',
+		'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36',
+		'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko',
+		'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.11 TaoBrowser/2.0 Safari/536.11',
+		'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/21.0.1180.71 Safari/537.1 LBBROWSER',
+		'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; QQDownload 732; .NET4.0C; .NET4.0E)',
+		'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.84 Safari/535.11 SE 2.X MetaSr 1.0',
+		'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; SV1; QQDownload 732; .NET4.0C; .NET4.0E; SE 2.X MetaSr 1.0) ',
+	]
+
+	headers = {'User-Agent': random.choice(user_agents)}
+	return headers
+
+
+def get_url(url: str, name: str = '鬼吹灯') -> dict:
+    """
+    将作者页面书的url提取出来，得到指定数书的书名地址
+    :param url: str
+    :param name: str
+    :return: list
+    """
+    req = requests.get(url)
+    page_content = req.content.decode('GBK')
+    tree = etree.HTML(page_content)
+    book_urls = tree.xpath('//ul[@class="zt2013_lbxx"]/li/a/@href')
+    book_title = tree.xpath('//ul[@class="zt2013_lbxx"]/li//a/text()')
+    book_url = ["http://www.ting56.com" + i for i in book_urls]
+    novel_info = dict(zip(book_title, book_url))
+    targe_list = {k: i for k, i in novel_info.items() if name in k}
+    return targe_list
+
+
+def chapter_url(url: str) -> list:
+    """
+    获取指定书的章节url
+    :param url:
+    :return:
+    """
+    rep = requests.get(url)
+    tree = etree.HTML(rep.text)
+    list_url = tree.xpath('//*[@id="vlink_1"]/ul//a/@href')
+    true_list = ["http://www.ting56.com" + i for i in list_url]
+    return true_list
+
+
+def url_code(url: str) -> map:
+    '''
+    抓取网页上加密字段
+    :param url: str
+    :return: map
+    '''
+    req = requests.get(url)
+    num = re.findall("(\*[0-9]+)", req.text)
+    target_num = map(lambda x: x[1:], num)
+    return target_num
+
+
+def url_decode(ecrypt_num: list) -> str:
+    '''
+    对网页源码的js加载程序进行解码
+    :param ecrypt_num: list
+    :return: str
+    '''
+    decode_content = map(lambda x: chr(int(x)), ecrypt_num)
+    string = ''.join(decode_content)
+    return string
+
+
+def m4a_url_clean(cotent: str) -> str:
+    '''
+    将的到url清洗的到真正的m4a_url
+    :param cotent:
+    :return: str
+    '''
+    m4a_url = re.sub('&\d+&[A-Za-z0-9]*', '', cotent)
+    return m4a_url
+
+
+def json_url(cotent, page_num):
+    '''
+    当对加密数字的解码结果不是m4a时，那么就直接构造json的url对其爬取然后在一一对其爬取
+    :param cotent:
+    :param page_num: int
+    :return: str
+    '''
+    url_id = re.search('\d+', cotent).group()
+    for i in range(0, int(page_num)+1):
+        print(i)
+        data1 = {
+            'url': 'yousheng/%s/play_%s_%d.htm' % (url_id, url_id, i)  # i为章节数需要自己输入控制，这里输入是为了省事。
+        }
+        req = requests.post('http://www.ting56.com/player/tingchina.php', data=data1)
+        mp3_url = json.loads(req.text)
+        yield mp3_url['url']
+
+
+def novel_mp3_save(novel_url: str, headers: dict):
+    """
+    保存mp3格式的文件
+    :param novel_url: str
+    :param headers: dict
+    :return: none
+    """
+    content = requests.get(novel_url, headers=headers)
+    page = re.findall(r'(\d+).mp3', novel_url)[0]
+    with open(r'C:\Users\Govn\Desktop\有声小说\%s.mp3' % page, 'wb') as file:
+        file.write(content.content)
+        file.close()
+
+
+def novel_m4a_save(novel_url: str, headers: dict):
+    content = requests.get(novel_url, headers=headers)
+    with open(r'C:\Users\Govn\Desktop\有声小说\%s.mp3' % i, 'wb') as file:
+        file.write(content.content)
+        file.close()
+
+
+def main():
+    book_dict = get_url(url)
+    print(book_dict)
+    name = input('输入你要下载的内容:')
+    book_url = book_dict[name]
+    chapt_urls = chapter_url(book_url)
+    encry_code = url_code(chapt_urls[0])
+    decode_url = url_decode(encry_code)
+    if 'm4a' in decode_url[-6:-1]:
+        for chapt_url in chapt_urls:
+            decode_url_m4a = url_decode(url_code(chapt_url))
+            novel_m4a_url = m4a_url_clean(decode_url_m4a)
+            novel_m4a_save(novel_m4a_url)
+    else:
+        page_num = re.findall(r'\d+',chapt_urls[-1])[-1]
+        try:
+            for novel_mp3_url in json_url(decode_url, page_num):
+                print('下载：', novel_mp3_url)
+                novel_mp3_save(novel_mp3_url, headers=get_ua())
+        except Exception as ERR:
+            print(ERR)
+
+if __name__ == '__main__':
+    url = "http://www.ting56.com/byy/aibaoliang.html"
+    # main()
+    print(sys.getsizeof(main()))
