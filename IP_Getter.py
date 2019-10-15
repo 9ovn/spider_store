@@ -20,8 +20,7 @@ class IpCathcer:
         :param num:
         :return:
         """
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) \
-                    Gecko/20100101 Firefox/34.0',
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) \nGecko/20100101 Firefox/34.0',
                    'Accept': '*/*',
                    'Connection': 'keep-alive',
                    'Accept-Language': 'zh-CN,zh;q=0.8'}
@@ -45,8 +44,7 @@ class IpCathcer:
         :return:
         """
         url = 'https://www.xicidaili.com/nn/'
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) \
-                    Gecko/20100101 Firefox/34.0',
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) \nGecko/20100101 Firefox/34.0',
                    'Accept': '*/*',
                    'Connection': 'keep-alive',
                    'Accept-Language': 'zh-CN,zh;q=0.8'}
