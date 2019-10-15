@@ -1,12 +1,17 @@
 import re
 import requests
-from collections import deque
+import redis
 
-Queue = deque()
-listB = []
+
+CONN = redis.Redis(host='127.0.0.1', port='6379')
 
 
 class IpCathcer:
+    __ip_list = []
+
+    @classmethod
+    def get_list(cls):
+        return cls.__ip_list
 
     @staticmethod
     def ip_spider0(num):
@@ -23,9 +28,10 @@ class IpCathcer:
         try:
             html = requests.get(url.format(num), headers=headers).text
             ips = re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}', html)
-            for ip in ips:
-                print(type(ip))
-                yield ip
+            IpCathcer.__ip_list.extend(ips)
+
+            return IpCathcer
+
         except Exception as Err:
             print(Err)
             pass
@@ -47,10 +53,12 @@ class IpCathcer:
             ips = re.findall(r'<td>(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})</td>', html.text)
             ports = re.findall(r'<td>(\d{1,5})</td>', html.text)
 
-            ip_pool = []
             if len(ips) == len(ports):
                 for i in range(len(ips)):
-                    yield str(ips[i] + ':' + ports[i])
+                    ip = str(ips[i] + ':' + ports[i])
+                    IpCathcer.__ip_list.append(ip)
+
+            return IpCathcer.__ip_list
 
         except Exception as Err:
             print(Err)
@@ -65,39 +73,52 @@ class IpCathcer:
 
 
     @staticmethod
-    def ip_checker(ip):
+    def ip_checker(ips):
         """
         检查IP可用与否，可以写成装饰器的样式 但是感觉有点没啥用。
         高并发模式化将该函数改成装饰器，然后并发抓取IP。
         :param ip:
         :return:
         """
+        ip_pool = []
         url = 'http://www.baidu.com'
-        proxy = {
-            'http': ip,
-            'https': ip
-        }
-        try:
-            reponse = requests.get(url, proxies=proxy, timeout=4)
-            if reponse.status_code == 200:
-                Queue.append(ip)
-                listB.append(ip)
-                print('好玩意啊：' + ip)
-            else:
-                print('什么几把玩意：' + ip)
-        except Exception as Err:
-            print('fuck')
 
+        for ip in IpCathcer.__ip_list:
 
-    def redis_insrt():
-        
+            proxy = {
+                'http': ip,
+                'https': ip
+            }
+
+            try:
+                reponse = requests.get(url, proxies=proxy, timeout=4)
+
+                if reponse.status_code == 200:
+                    print('好玩意啊：' + ip)
+                    ip_pool.append(ip)
+
+                else:
+                    print('什么几把玩意：' + ip)
+
+            except Exception as Err:
+                print('fuck')
+        return ip_pool
 
 def main():
-    for ip in IpCathcer.ip_spider0(10):
-        IpCathcer.ip_checker(ip)
+    IpCathcer.ip_spider0(10)
+    IpCathcer.ip_spider1()
+
+    print(IpCathcer.get_list())
+
+    ips = IpCathcer.ip_checker(IpCathcer.get_list())
+    print(ips)
+
+    while ips:
+        ip = ips.pop()
+        CONN.lpush('ip', ip)
+
+    print(ips)
 
 
 if __name__ == '__main__':
-    # main()
-    for i in IpCathcer.ip_spider1():
-        print(i)
+    main()
