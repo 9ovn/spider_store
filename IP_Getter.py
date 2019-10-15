@@ -20,14 +20,16 @@ class IpCathcer:
         :param num:
         :return:
         """
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0',
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) \
+                    Gecko/20100101 Firefox/34.0',
                    'Accept': '*/*',
                    'Connection': 'keep-alive',
                    'Accept-Language': 'zh-CN,zh;q=0.8'}
         url = 'http://www.66ip.cn/nmtq.php?getnum={}&isp=0&anonymoustype=0&s'
         try:
             html = requests.get(url.format(num), headers=headers).text
-            ips = re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}', html)
+            ips = re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}',
+                             html)
             IpCathcer.__ip_list.extend(ips)
 
             return IpCathcer
@@ -43,14 +45,16 @@ class IpCathcer:
         :return:
         """
         url = 'https://www.xicidaili.com/nn/'
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0',
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) \
+                    Gecko/20100101 Firefox/34.0',
                    'Accept': '*/*',
                    'Connection': 'keep-alive',
                    'Accept-Language': 'zh-CN,zh;q=0.8'}
         try:
-            from lxml import etree
             html = requests.get(url, headers=headers)
-            ips = re.findall(r'<td>(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})</td>', html.text)
+            ips = re.findall(r'<td>(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})</td>',
+                             html.text)
+
             ports = re.findall(r'<td>(\d{1,5})</td>', html.text)
 
             if len(ips) == len(ports):
@@ -70,7 +74,6 @@ class IpCathcer:
         :return:
         """
         pass
-
 
     @staticmethod
     def ip_checker(ips):
@@ -101,8 +104,9 @@ class IpCathcer:
                     print('什么几把玩意：' + ip)
 
             except Exception as Err:
-                print('fuck')
+                print('fuck:' + Err)
         return ip_pool
+
 
 def main():
     IpCathcer.ip_spider0(10)
