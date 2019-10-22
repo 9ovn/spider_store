@@ -98,3 +98,5 @@ ITEM_PIPELINES = {
 
 MONGO_URI = '10.1.12.73'
 MONGO_DB = 'weibocomment_info'
+
+

@@ -9,7 +9,10 @@ from PIL import Image
 import random
 from urllib.parse import quote_plus
 import http.cookiejar as cookielib
-import redis
+
+
+__slot__ = ['WeiboLogin', 'Redis_Insert', 'set', 'get']
+
 
 AGENT = 'mozilla/5.0 (windowS NT 10.0; win64; x64) appLewEbkit/537.36 (KHTML, likE gecko) chrome/71.0.3578.98 safari/537.36'
 HEADERS = {'User-Agent': AGENT}
@@ -45,7 +48,6 @@ class WeiboLogin:
         """
         username_quote = quote_plus(self.user)
         username_base64 = base64.b64encode(username_quote.encode("utf-8"))
-        print('username_base64' + username_base64.decode("utf-8"))
         # 获得通过base64加密的username
         return username_base64.decode("utf-8")
 
@@ -227,9 +229,13 @@ class WeiboLogin:
 
 
 class Redis_Insert:
+    """
+    调用set,存储用户名和cookie
+    调用get，获得cookies
+    """
     _instance_lock = None
 
-    def __init__(self,ip='127.0.0.1', port=6379):
+    def __init__(self, ip='127.0.0.1', port=6379):
         self.ip = port
         self.ip = ip
         self.db = Redis(self.ip, self.port)
@@ -240,11 +246,22 @@ class Redis_Insert:
         return cls._instance_lock
 
 
-    def set(self, user_name, value):
-        return self.db.sadd(user_name, value)
+    def set(self, user_name: str, value: dict):
+        """
+        将cookies存到数据库
+        :param user_name: dict
+        :param value: str
+        :return:
+        """
+        return self.db.set(user_name, value)
 
     def get(self, user_name):
-        return self.db.zpop(user_name)
+        """
+        得到指定user_name的cookies值
+        :param user_name:
+        :return:
+        """
+        return self.db.get(user_name)
 
 
 
@@ -255,4 +272,4 @@ if __name__ == "__main__":
     weibo = WeiboLogin(username, password, cookie_path)
 
     d = weibo.login()
-    print(d)
+    Redis_Insert().set(username, d)
