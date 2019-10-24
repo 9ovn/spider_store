@@ -57,9 +57,9 @@ DOWNLOAD_DELAY = 2
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
-# DOWNLOADER_MIDDLEWARES = {
-#    'sinacrawl.middlewares.SinacrawlDownloaderMiddleware': 543,
-# }
+DOWNLOADER_MIDDLEWARES = {
+   'sinacrawl.middlewares.ProxyMiddleware': 554,
+}
 
 # Enable or disable extensions
 # See https://doc.scrapy.org/en/latest/topics/extensions.html
@@ -96,7 +96,9 @@ ITEM_PIPELINES = {
 
 # LOG_LEVEL = 'INFO'
 
-MONGO_URI = '10.1.12.73'
+MONGO_URI = 'localhost'
 MONGO_DB = 'weibocomment_info'
 
+
+RETRY_HTTP_CODES = [401, 403, 408, 414, 500, 502, 503, 504]
 
