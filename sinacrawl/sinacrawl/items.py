@@ -10,7 +10,7 @@ from scrapy import Field, Item
 
 class SinacrawlItem(Item):
 
-    collection = table = 'weibo_info'
+    collection = 'weibo_info'
 
     like = Field()
     comment = Field()

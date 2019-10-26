@@ -96,7 +96,7 @@ ITEM_PIPELINES = {
 
 # LOG_LEVEL = 'INFO'
 
-MONGO_URI = 'localhost'
+MONGO_URI = 'mongodb://localhost:27017/'
 MONGO_DB = 'weibocomment_info'
 
 
